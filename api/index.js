@@ -5,8 +5,18 @@ import authRouter from "./route/auth.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import multer from "multer";
+import { v2 as cloudinary } from 'cloudinary';
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
+
+// Configure Cloudinary
+cloudinary.config({ 
+    cloud_name: process.env.CLOUD_NAME, 
+    api_key: process.env.CLOUD_API_KEY, 
+    api_secret: process.env.CLOUD_API_SECRET
+});
 
 app.use(express.json());
 app.use(cors({
@@ -15,25 +25,43 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-// Serve uploaded files statically
-app.use("/uploads", express.static("uploads"));
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, "./uploads");
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + "-" + file.originalname);
+// Configure multer for memory storage (temporary storage before Cloudinary)
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
     }
 });
-const upload = multer({storage: storage});
 
-app.post("/api/upload", upload.single("file"), (req, res) => {
+app.post("/api/upload", upload.single("file"), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: "No file uploaded" });
         }
-        res.status(200).json(req.file.filename);
+
+        // Upload to Cloudinary
+        const uploadResult = await cloudinary.uploader
+            .upload_stream(
+                {
+                    resource_type: "auto",
+                    folder: "blog-images", // Optional: organize uploads in a folder
+                    public_id: `blog-${Date.now()}`, // Optional: custom public ID
+                },
+                (error, result) => {
+                    if (error) {
+                        console.error("Cloudinary upload error:", error);
+                        return res.status(500).json({ error: "Upload to Cloudinary failed" });
+                    }
+                    
+                    // Return the Cloudinary URL
+                    res.status(200).json({
+                        url: result.secure_url,
+                        publicId: result.public_id
+                    });
+                }
+            )
+            .end(req.file.buffer);
+
     } catch (err) {
         console.error("Upload error:", err);
         res.status(500).json({ error: "Upload failed" });
