@@ -20,7 +20,7 @@ cloudinary.config({
 
 app.use(express.json());
 app.use(cors({
-    origin: "http://localhost:5173", 
+    origin: "https://blogapp2801.netlify.app/", 
     credentials: true
 }));
 app.use(cookieParser());
@@ -78,6 +78,6 @@ app.use("/api/posts", postsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
 
-app.listen(8081, () => {
-    console.log("Server is running on port 8081");
+app.listen(process.env.PORT, () => {
+    console.log(`Server is running on port ${process.env.PORT}`);
 })
