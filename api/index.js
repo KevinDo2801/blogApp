@@ -20,10 +20,15 @@ cloudinary.config({
 
 app.use(express.json());
 app.use(cors({
-    origin: "https://blogapp2801.netlify.app/", 
+    origin: ["https://blogapp2801.netlify.app", "http://localhost:3000"], 
     credentials: true
 }));
 app.use(cookieParser());
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
 
 // Configure multer for memory storage (temporary storage before Cloudinary)
 const upload = multer({ 
@@ -78,6 +83,8 @@ app.use("/api/posts", postsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/auth", authRouter);
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server is running on port ${process.env.PORT}`);
-})
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+});

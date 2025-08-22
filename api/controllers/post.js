@@ -85,7 +85,7 @@ export const deletePost = (req, res) => {
 }
 
 export const getPostsByUserId = (req, res) => {
-    const q = "SELECT * FROM posts WHERE `userId` = ?";
+    const q = "SELECT * FROM posts WHERE `uid` = ?";
     db.query(q, [req.params.id], (err, data) => {
         if (err) return res.status(500).json(err);
         return res.status(200).json(data);
